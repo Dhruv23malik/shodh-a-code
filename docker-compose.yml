@@ -1,0 +1,65 @@
+# Shodh a Code — postgres + api + worker.
+# The `runner` service exists ONLY so `docker compose up --build`
+# builds the shodh-runner:latest image the worker spawns per attempt.
+# It runs `true` and exits immediately (restart: "no"); the worker
+# depends on it completing successfully, which guarantees the image
+# exists before any attempt is judged. The runner image never serves
+# traffic and is never run as a long-lived service.
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: shodh
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d shodh"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  runner:
+    build:
+      context: .
+      dockerfile: judge/Dockerfile.runner
+    image: shodh-runner:latest
+    command: ["true"]
+    restart: "no"
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/shodh
+      PORT: "3000"
+      JUDGE_MODE: real
+    ports:
+      - "3000:3000"
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    depends_on:
+      postgres:
+        condition: service_healthy
+      runner:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/shodh
+      JUDGE_MODE: real
+      JUDGE_IMAGE: shodh-runner:latest
+      WORKER_ID: worker-1
+    # The Docker socket is mounted ONLY into the trusted worker, NEVER
+    # into runner containers (see judge/SECURITY.md).
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+volumes:
+  pgdata:

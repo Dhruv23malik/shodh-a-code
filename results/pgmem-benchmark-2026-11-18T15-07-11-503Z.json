@@ -1,0 +1,38 @@
+{
+  "generatedAt": "2026-11-18T15:07:11.503Z",
+  "executionMode": "pg-mem (in-memory Postgres emulator — NOT real PostgreSQL; no query planner, no index scans modelled)",
+  "dataset": {
+    "users": 60,
+    "problems": 3,
+    "submissions": 900,
+    "attempts": 1260,
+    "seedMs": 2936
+  },
+  "aggregatesQueryBefore002": {
+    "medianMs": 2636,
+    "runsMs": [
+      2625,
+      2629,
+      2636,
+      2659,
+      2783
+    ],
+    "rows": 180
+  },
+  "aggregatesQueryAfter002": {
+    "medianMs": 2558,
+    "runsMs": [
+      2550,
+      2554,
+      2558,
+      2559,
+      2588
+    ],
+    "rows": 180
+  },
+  "migration002AppliedInPgMem": true,
+  "aggregatesEqualToIndependentSimulation": true,
+  "standingsRows": 60,
+  "leaderboardSqlNotRunnableInPgMem": "EXTRACT(EPOCH FROM (timestamptz - timestamptz)) throws \"operator does not exist\" in pg-mem; SQL-leaderboard equality must be checked on real PostgreSQL (see REPORT.md).",
+  "note": "pg-mem timings measure JS-emulator overhead, not database performance. Real EXPLAIN ANALYZE before/after numbers require PostgreSQL; see REPORT.md for the exact commands."
+}

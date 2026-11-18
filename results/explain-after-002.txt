@@ -1,0 +1,301 @@
+== AFTER migration 002 — 3 runs ==
+--- run 1
+                                                                                                                                                                   QUERY PLAN                                                                                                                                                                    
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=273.27..273.32 rows=20 width=44) (actual time=4.945..4.956 rows=20 loops=1)
+   Buffers: shared hit=69
+   CTE sub
+     ->  Hash Join  (cost=155.99..198.38 rows=1080 width=66) (actual time=1.879..2.396 rows=1080 loops=1)
+           Hash Cond: (s_1.id = auth.submission_id)
+           Buffers: shared hit=53
+           ->  Seq Scan on submissions s_1  (cost=0.00..39.55 rows=1080 width=56) (actual time=0.005..0.207 rows=1080 loops=1)
+                 Filter: (contest_id = 'c0000000-0001-4000-8000-000000000001'::uuid)
+                 Rows Removed by Filter: 4
+                 Buffers: shared hit=26
+           ->  Hash  (cost=142.44..142.44 rows=1084 width=26) (actual time=1.853..1.854 rows=1083 loops=1)
+                 Buckets: 2048  Batches: 1  Memory Usage: 78kB
+                 Buffers: shared hit=27
+                 ->  Subquery Scan on auth  (cost=124.38..142.44 rows=1084 width=26) (actual time=1.138..1.597 rows=1083 loops=1)
+                       Buffers: shared hit=27
+                       ->  Unique  (cost=124.38..131.60 rows=1084 width=30) (actual time=1.137..1.436 rows=1083 loops=1)
+                             Buffers: shared hit=27
+                             ->  Sort  (cost=124.38..127.99 rows=1443 width=30) (actual time=1.136..1.229 rows=1443 loops=1)
+                                   Sort Key: a.submission_id, a.attempt_no DESC
+                                   Sort Method: quicksort  Memory: 132kB
+                                   Buffers: shared hit=27
+                                   ->  Seq Scan on attempts a  (cost=0.00..48.66 rows=1443 width=30) (actual time=0.043..0.380 rows=1443 loops=1)
+                                         Filter: ((verdict IS NOT NULL) AND (verdict <> 'judge_error'::text) AND (status = 'completed'::text))
+                                         Rows Removed by Filter: 1
+                                         Buffers: shared hit=27
+   ->  Sort  (cost=74.89..75.05 rows=62 width=44) (actual time=4.943..4.949 rows=20 loops=1)
+         Sort Key: ranked.rank
+         Sort Method: top-N heapsort  Memory: 26kB
+         Buffers: shared hit=69
+         ->  Subquery Scan on ranked  (cost=71.23..73.24 rows=62 width=44) (actual time=4.874..4.910 rows=62 loops=1)
+               Buffers: shared hit=66
+               ->  WindowAgg  (cost=71.23..72.62 rows=62 width=44) (actual time=4.873..4.900 rows=62 loops=1)
+                     Buffers: shared hit=66
+                     ->  Sort  (cost=71.23..71.38 rows=62 width=36) (actual time=4.866..4.873 rows=62 loops=1)
+                           Sort Key: ((COALESCE(sum(GREATEST('0'::bigint, (100 - (20 * agg.wrong_before)))), '0'::numeric))::integer) DESC, ((COALESCE(sum((floor(GREATEST('0'::numeric, (EXTRACT(epoch FROM (agg.first_accept_at - c.opens_at)) / '60'::numeric))) + ((20 * agg.wrong_before))::numeric)), '0'::numeric))::integer), cp.user_id
+                           Sort Method: quicksort  Memory: 28kB
+                           Buffers: shared hit=66
+                           ->  Hash Join  (cost=67.51..69.38 rows=62 width=36) (actual time=4.787..4.812 rows=62 loops=1)
+                                 Hash Cond: (u.id = cp.user_id)
+                                 Buffers: shared hit=60
+                                 ->  Seq Scan on users u  (cost=0.00..1.68 rows=68 width=24) (actual time=0.007..0.014 rows=68 loops=1)
+                                       Buffers: shared hit=1
+                                 ->  Hash  (cost=66.74..66.74 rows=62 width=28) (actual time=4.763..4.766 rows=62 loops=1)
+                                       Buckets: 1024  Batches: 1  Memory Usage: 12kB
+                                       Buffers: shared hit=59
+                                       ->  HashAggregate  (cost=65.34..66.74 rows=62 width=28) (actual time=4.717..4.745 rows=62 loops=1)
+                                             Group Key: cp.user_id
+                                             Batches: 1  Memory Usage: 48kB
+                                             Buffers: shared hit=59
+                                             ->  Hash Left Join  (cost=52.27..63.02 rows=62 width=56) (actual time=4.478..4.532 rows=182 loops=1)
+                                                   Hash Cond: (cp.user_id = agg.author_id)
+                                                   Buffers: shared hit=59
+                                                   ->  Nested Loop  (cost=0.15..10.61 rows=62 width=24) (actual time=0.017..0.037 rows=62 loops=1)
+                                                         Buffers: shared hit=3
+                                                         ->  Index Scan using contests_pkey on contests c  (cost=0.15..8.17 rows=1 width=24) (actual time=0.009..0.010 rows=1 loops=1)
+                                                               Index Cond: (id = 'c0000000-0001-4000-8000-000000000001'::uuid)
+                                                               Buffers: shared hit=2
+                                                         ->  Seq Scan on contest_participants cp  (cost=0.00..1.83 rows=62 width=32) (actual time=0.006..0.015 rows=62 loops=1)
+                                                               Filter: (contest_id = 'c0000000-0001-4000-8000-000000000001'::uuid)
+                                                               Rows Removed by Filter: 4
+                                                               Buffers: shared hit=1
+                                                   ->  Hash  (cost=52.06..52.06 rows=5 width=48) (actual time=4.446..4.448 rows=180 loops=1)
+                                                         Buckets: 1024  Batches: 1  Memory Usage: 23kB
+                                                         Buffers: shared hit=56
+                                                         ->  Subquery Scan on agg  (cost=51.86..52.06 rows=5 width=48) (actual time=4.039..4.404 rows=180 loops=1)
+                                                               Buffers: shared hit=56
+                                                               ->  GroupAggregate  (cost=51.86..52.01 rows=5 width=48) (actual time=4.038..4.380 rows=180 loops=1)
+                                                                     Group Key: sub.author_id, sub.problem_id, (min(sub.created_at))
+                                                                     Buffers: shared hit=56
+                                                                     ->  Sort  (cost=51.86..51.87 rows=5 width=80) (actual time=4.029..4.099 rows=1080 loops=1)
+                                                                           Sort Key: sub.author_id, sub.problem_id, (min(sub.created_at))
+                                                                           Sort Method: quicksort  Memory: 141kB
+                                                                           Buffers: shared hit=56
+                                                                           ->  Hash Right Join  (cost=24.53..51.80 rows=5 width=80) (actual time=3.303..3.700 rows=1080 loops=1)
+                                                                                 Hash Cond: ((s.author_id = sub.author_id) AND (s.problem_id = sub.problem_id))
+                                                                                 Buffers: shared hit=53
+                                                                                 ->  CTE Scan on sub s  (cost=0.00..21.60 rows=1080 width=72) (actual time=0.001..0.089 rows=1080 loops=1)
+                                                                                 ->  Hash  (cost=24.46..24.46 rows=5 width=40) (actual time=3.289..3.290 rows=180 loops=1)
+                                                                                       Buckets: 1024  Batches: 1  Memory Usage: 21kB
+                                                                                       Buffers: shared hit=53
+                                                                                       ->  GroupAggregate  (cost=24.36..24.46 rows=5 width=40) (actual time=3.035..3.223 rows=180 loops=1)
+                                                                                             Group Key: sub.author_id, sub.problem_id
+                                                                                             Buffers: shared hit=53
+                                                                                             ->  Sort  (cost=24.36..24.37 rows=5 width=40) (actual time=3.027..3.074 rows=720 loops=1)
+                                                                                                   Sort Key: sub.author_id, sub.problem_id
+                                                                                                   Sort Method: quicksort  Memory: 70kB
+                                                                                                   Buffers: shared hit=53
+                                                                                                   ->  CTE Scan on sub  (cost=0.00..24.30 rows=5 width=40) (actual time=1.883..2.878 rows=720 loops=1)
+                                                                                                         Filter: (verdict = 'accepted'::text)
+                                                                                                         Rows Removed by Filter: 360
+                                                                                                         Buffers: shared hit=53
+ Planning:
+   Buffers: shared hit=456 read=1
+ Planning Time: 2.519 ms
+ Execution Time: 5.355 ms
+(95 rows)
+
+--- run 2
+                                                                                                                                                                   QUERY PLAN                                                                                                                                                                    
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=273.27..273.32 rows=20 width=44) (actual time=5.131..5.143 rows=20 loops=1)
+   Buffers: shared hit=69
+   CTE sub
+     ->  Hash Join  (cost=155.99..198.38 rows=1080 width=66) (actual time=1.964..2.511 rows=1080 loops=1)
+           Hash Cond: (s_1.id = auth.submission_id)
+           Buffers: shared hit=53
+           ->  Seq Scan on submissions s_1  (cost=0.00..39.55 rows=1080 width=56) (actual time=0.005..0.212 rows=1080 loops=1)
+                 Filter: (contest_id = 'c0000000-0001-4000-8000-000000000001'::uuid)
+                 Rows Removed by Filter: 4
+                 Buffers: shared hit=26
+           ->  Hash  (cost=142.44..142.44 rows=1084 width=26) (actual time=1.942..1.944 rows=1083 loops=1)
+                 Buckets: 2048  Batches: 1  Memory Usage: 78kB
+                 Buffers: shared hit=27
+                 ->  Subquery Scan on auth  (cost=124.38..142.44 rows=1084 width=26) (actual time=1.221..1.699 rows=1083 loops=1)
+                       Buffers: shared hit=27
+                       ->  Unique  (cost=124.38..131.60 rows=1084 width=30) (actual time=1.219..1.533 rows=1083 loops=1)
+                             Buffers: shared hit=27
+                             ->  Sort  (cost=124.38..127.99 rows=1443 width=30) (actual time=1.219..1.312 rows=1443 loops=1)
+                                   Sort Key: a.submission_id, a.attempt_no DESC
+                                   Sort Method: quicksort  Memory: 132kB
+                                   Buffers: shared hit=27
+                                   ->  Seq Scan on attempts a  (cost=0.00..48.66 rows=1443 width=30) (actual time=0.006..0.372 rows=1443 loops=1)
+                                         Filter: ((verdict IS NOT NULL) AND (verdict <> 'judge_error'::text) AND (status = 'completed'::text))
+                                         Rows Removed by Filter: 1
+                                         Buffers: shared hit=27
+   ->  Sort  (cost=74.89..75.05 rows=62 width=44) (actual time=5.130..5.135 rows=20 loops=1)
+         Sort Key: ranked.rank
+         Sort Method: top-N heapsort  Memory: 26kB
+         Buffers: shared hit=69
+         ->  Subquery Scan on ranked  (cost=71.23..73.24 rows=62 width=44) (actual time=5.061..5.096 rows=62 loops=1)
+               Buffers: shared hit=66
+               ->  WindowAgg  (cost=71.23..72.62 rows=62 width=44) (actual time=5.059..5.086 rows=62 loops=1)
+                     Buffers: shared hit=66
+                     ->  Sort  (cost=71.23..71.38 rows=62 width=36) (actual time=5.052..5.060 rows=62 loops=1)
+                           Sort Key: ((COALESCE(sum(GREATEST('0'::bigint, (100 - (20 * agg.wrong_before)))), '0'::numeric))::integer) DESC, ((COALESCE(sum((floor(GREATEST('0'::numeric, (EXTRACT(epoch FROM (agg.first_accept_at - c.opens_at)) / '60'::numeric))) + ((20 * agg.wrong_before))::numeric)), '0'::numeric))::integer), cp.user_id
+                           Sort Method: quicksort  Memory: 28kB
+                           Buffers: shared hit=66
+                           ->  Hash Join  (cost=67.51..69.38 rows=62 width=36) (actual time=4.976..5.002 rows=62 loops=1)
+                                 Hash Cond: (u.id = cp.user_id)
+                                 Buffers: shared hit=60
+                                 ->  Seq Scan on users u  (cost=0.00..1.68 rows=68 width=24) (actual time=0.007..0.013 rows=68 loops=1)
+                                       Buffers: shared hit=1
+                                 ->  Hash  (cost=66.74..66.74 rows=62 width=28) (actual time=4.953..4.957 rows=62 loops=1)
+                                       Buckets: 1024  Batches: 1  Memory Usage: 12kB
+                                       Buffers: shared hit=59
+                                       ->  HashAggregate  (cost=65.34..66.74 rows=62 width=28) (actual time=4.907..4.936 rows=62 loops=1)
+                                             Group Key: cp.user_id
+                                             Batches: 1  Memory Usage: 48kB
+                                             Buffers: shared hit=59
+                                             ->  Hash Left Join  (cost=52.27..63.02 rows=62 width=56) (actual time=4.685..4.740 rows=182 loops=1)
+                                                   Hash Cond: (cp.user_id = agg.author_id)
+                                                   Buffers: shared hit=59
+                                                   ->  Nested Loop  (cost=0.15..10.61 rows=62 width=24) (actual time=0.018..0.038 rows=62 loops=1)
+                                                         Buffers: shared hit=3
+                                                         ->  Index Scan using contests_pkey on contests c  (cost=0.15..8.17 rows=1 width=24) (actual time=0.009..0.010 rows=1 loops=1)
+                                                               Index Cond: (id = 'c0000000-0001-4000-8000-000000000001'::uuid)
+                                                               Buffers: shared hit=2
+                                                         ->  Seq Scan on contest_participants cp  (cost=0.00..1.83 rows=62 width=32) (actual time=0.006..0.015 rows=62 loops=1)
+                                                               Filter: (contest_id = 'c0000000-0001-4000-8000-000000000001'::uuid)
+                                                               Rows Removed by Filter: 4
+                                                               Buffers: shared hit=1
+                                                   ->  Hash  (cost=52.06..52.06 rows=5 width=48) (actual time=4.651..4.653 rows=180 loops=1)
+                                                         Buckets: 1024  Batches: 1  Memory Usage: 23kB
+                                                         Buffers: shared hit=56
+                                                         ->  Subquery Scan on agg  (cost=51.86..52.06 rows=5 width=48) (actual time=4.218..4.609 rows=180 loops=1)
+                                                               Buffers: shared hit=56
+                                                               ->  GroupAggregate  (cost=51.86..52.01 rows=5 width=48) (actual time=4.217..4.585 rows=180 loops=1)
+                                                                     Group Key: sub.author_id, sub.problem_id, (min(sub.created_at))
+                                                                     Buffers: shared hit=56
+                                                                     ->  Sort  (cost=51.86..51.87 rows=5 width=80) (actual time=4.208..4.279 rows=1080 loops=1)
+                                                                           Sort Key: sub.author_id, sub.problem_id, (min(sub.created_at))
+                                                                           Sort Method: quicksort  Memory: 141kB
+                                                                           Buffers: shared hit=56
+                                                                           ->  Hash Right Join  (cost=24.53..51.80 rows=5 width=80) (actual time=3.490..3.898 rows=1080 loops=1)
+                                                                                 Hash Cond: ((s.author_id = sub.author_id) AND (s.problem_id = sub.problem_id))
+                                                                                 Buffers: shared hit=53
+                                                                                 ->  CTE Scan on sub s  (cost=0.00..21.60 rows=1080 width=72) (actual time=0.000..0.089 rows=1080 loops=1)
+                                                                                 ->  Hash  (cost=24.46..24.46 rows=5 width=40) (actual time=3.476..3.477 rows=180 loops=1)
+                                                                                       Buckets: 1024  Batches: 1  Memory Usage: 21kB
+                                                                                       Buffers: shared hit=53
+                                                                                       ->  GroupAggregate  (cost=24.36..24.46 rows=5 width=40) (actual time=3.239..3.417 rows=180 loops=1)
+                                                                                             Group Key: sub.author_id, sub.problem_id
+                                                                                             Buffers: shared hit=53
+                                                                                             ->  Sort  (cost=24.36..24.37 rows=5 width=40) (actual time=3.227..3.277 rows=720 loops=1)
+                                                                                                   Sort Key: sub.author_id, sub.problem_id
+                                                                                                   Sort Method: quicksort  Memory: 70kB
+                                                                                                   Buffers: shared hit=53
+                                                                                                   ->  CTE Scan on sub  (cost=0.00..24.30 rows=5 width=40) (actual time=1.969..3.056 rows=720 loops=1)
+                                                                                                         Filter: (verdict = 'accepted'::text)
+                                                                                                         Rows Removed by Filter: 360
+                                                                                                         Buffers: shared hit=53
+ Planning:
+   Buffers: shared hit=457
+ Planning Time: 2.480 ms
+ Execution Time: 5.529 ms
+(95 rows)
+
+--- run 3
+                                                                                                                                                                   QUERY PLAN                                                                                                                                                                    
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=273.27..273.32 rows=20 width=44) (actual time=7.167..7.181 rows=20 loops=1)
+   Buffers: shared hit=69
+   CTE sub
+     ->  Hash Join  (cost=155.99..198.38 rows=1080 width=66) (actual time=2.657..3.420 rows=1080 loops=1)
+           Hash Cond: (s_1.id = auth.submission_id)
+           Buffers: shared hit=53
+           ->  Seq Scan on submissions s_1  (cost=0.00..39.55 rows=1080 width=56) (actual time=0.006..0.289 rows=1080 loops=1)
+                 Filter: (contest_id = 'c0000000-0001-4000-8000-000000000001'::uuid)
+                 Rows Removed by Filter: 4
+                 Buffers: shared hit=26
+           ->  Hash  (cost=142.44..142.44 rows=1084 width=26) (actual time=2.630..2.633 rows=1083 loops=1)
+                 Buckets: 2048  Batches: 1  Memory Usage: 78kB
+                 Buffers: shared hit=27
+                 ->  Subquery Scan on auth  (cost=124.38..142.44 rows=1084 width=26) (actual time=1.699..2.335 rows=1083 loops=1)
+                       Buffers: shared hit=27
+                       ->  Unique  (cost=124.38..131.60 rows=1084 width=30) (actual time=1.697..2.109 rows=1083 loops=1)
+                             Buffers: shared hit=27
+                             ->  Sort  (cost=124.38..127.99 rows=1443 width=30) (actual time=1.696..1.813 rows=1443 loops=1)
+                                   Sort Key: a.submission_id, a.attempt_no DESC
+                                   Sort Method: quicksort  Memory: 132kB
+                                   Buffers: shared hit=27
+                                   ->  Seq Scan on attempts a  (cost=0.00..48.66 rows=1443 width=30) (actual time=0.009..0.500 rows=1443 loops=1)
+                                         Filter: ((verdict IS NOT NULL) AND (verdict <> 'judge_error'::text) AND (status = 'completed'::text))
+                                         Rows Removed by Filter: 1
+                                         Buffers: shared hit=27
+   ->  Sort  (cost=74.89..75.05 rows=62 width=44) (actual time=7.166..7.173 rows=20 loops=1)
+         Sort Key: ranked.rank
+         Sort Method: top-N heapsort  Memory: 26kB
+         Buffers: shared hit=69
+         ->  Subquery Scan on ranked  (cost=71.23..73.24 rows=62 width=44) (actual time=7.068..7.115 rows=62 loops=1)
+               Buffers: shared hit=66
+               ->  WindowAgg  (cost=71.23..72.62 rows=62 width=44) (actual time=7.066..7.103 rows=62 loops=1)
+                     Buffers: shared hit=66
+                     ->  Sort  (cost=71.23..71.38 rows=62 width=36) (actual time=7.057..7.067 rows=62 loops=1)
+                           Sort Key: ((COALESCE(sum(GREATEST('0'::bigint, (100 - (20 * agg.wrong_before)))), '0'::numeric))::integer) DESC, ((COALESCE(sum((floor(GREATEST('0'::numeric, (EXTRACT(epoch FROM (agg.first_accept_at - c.opens_at)) / '60'::numeric))) + ((20 * agg.wrong_before))::numeric)), '0'::numeric))::integer), cp.user_id
+                           Sort Method: quicksort  Memory: 28kB
+                           Buffers: shared hit=66
+                           ->  Hash Join  (cost=67.51..69.38 rows=62 width=36) (actual time=6.953..6.990 rows=62 loops=1)
+                                 Hash Cond: (u.id = cp.user_id)
+                                 Buffers: shared hit=60
+                                 ->  Seq Scan on users u  (cost=0.00..1.68 rows=68 width=24) (actual time=0.009..0.017 rows=68 loops=1)
+                                       Buffers: shared hit=1
+                                 ->  Hash  (cost=66.74..66.74 rows=62 width=28) (actual time=6.925..6.929 rows=62 loops=1)
+                                       Buckets: 1024  Batches: 1  Memory Usage: 12kB
+                                       Buffers: shared hit=59
+                                       ->  HashAggregate  (cost=65.34..66.74 rows=62 width=28) (actual time=6.855..6.903 rows=62 loops=1)
+                                             Group Key: cp.user_id
+                                             Batches: 1  Memory Usage: 48kB
+                                             Buffers: shared hit=59
+                                             ->  Hash Left Join  (cost=52.27..63.02 rows=62 width=56) (actual time=6.504..6.584 rows=182 loops=1)
+                                                   Hash Cond: (cp.user_id = agg.author_id)
+                                                   Buffers: shared hit=59
+                                                   ->  Nested Loop  (cost=0.15..10.61 rows=62 width=24) (actual time=0.023..0.051 rows=62 loops=1)
+                                                         Buffers: shared hit=3
+                                                         ->  Index Scan using contests_pkey on contests c  (cost=0.15..8.17 rows=1 width=24) (actual time=0.012..0.014 rows=1 loops=1)
+                                                               Index Cond: (id = 'c0000000-0001-4000-8000-000000000001'::uuid)
+                                                               Buffers: shared hit=2
+                                                         ->  Seq Scan on contest_participants cp  (cost=0.00..1.83 rows=62 width=32) (actual time=0.009..0.021 rows=62 loops=1)
+                                                               Filter: (contest_id = 'c0000000-0001-4000-8000-000000000001'::uuid)
+                                                               Rows Removed by Filter: 4
+                                                               Buffers: shared hit=1
+                                                   ->  Hash  (cost=52.06..52.06 rows=5 width=48) (actual time=6.459..6.461 rows=180 loops=1)
+                                                         Buckets: 1024  Batches: 1  Memory Usage: 23kB
+                                                         Buffers: shared hit=56
+                                                         ->  Subquery Scan on agg  (cost=51.86..52.06 rows=5 width=48) (actual time=5.833..6.394 rows=180 loops=1)
+                                                               Buffers: shared hit=56
+                                                               ->  GroupAggregate  (cost=51.86..52.01 rows=5 width=48) (actual time=5.832..6.364 rows=180 loops=1)
+                                                                     Group Key: sub.author_id, sub.problem_id, (min(sub.created_at))
+                                                                     Buffers: shared hit=56
+                                                                     ->  Sort  (cost=51.86..51.87 rows=5 width=80) (actual time=5.816..5.902 rows=1080 loops=1)
+                                                                           Sort Key: sub.author_id, sub.problem_id, (min(sub.created_at))
+                                                                           Sort Method: quicksort  Memory: 141kB
+                                                                           Buffers: shared hit=56
+                                                                           ->  Hash Right Join  (cost=24.53..51.80 rows=5 width=80) (actual time=4.716..5.347 rows=1080 loops=1)
+                                                                                 Hash Cond: ((s.author_id = sub.author_id) AND (s.problem_id = sub.problem_id))
+                                                                                 Buffers: shared hit=53
+                                                                                 ->  CTE Scan on sub s  (cost=0.00..21.60 rows=1080 width=72) (actual time=0.001..0.129 rows=1080 loops=1)
+                                                                                 ->  Hash  (cost=24.46..24.46 rows=5 width=40) (actual time=4.700..4.701 rows=180 loops=1)
+                                                                                       Buckets: 1024  Batches: 1  Memory Usage: 21kB
+                                                                                       Buffers: shared hit=53
+                                                                                       ->  GroupAggregate  (cost=24.36..24.46 rows=5 width=40) (actual time=4.385..4.623 rows=180 loops=1)
+                                                                                             Group Key: sub.author_id, sub.problem_id
+                                                                                             Buffers: shared hit=53
+                                                                                             ->  Sort  (cost=24.36..24.37 rows=5 width=40) (actual time=4.375..4.431 rows=720 loops=1)
+                                                                                                   Sort Key: sub.author_id, sub.problem_id
+                                                                                                   Sort Method: quicksort  Memory: 70kB
+                                                                                                   Buffers: shared hit=53
+                                                                                                   ->  CTE Scan on sub  (cost=0.00..24.30 rows=5 width=40) (actual time=2.663..4.161 rows=720 loops=1)
+                                                                                                         Filter: (verdict = 'accepted'::text)
+                                                                                                         Rows Removed by Filter: 360
+                                                                                                         Buffers: shared hit=53
+ Planning:
+   Buffers: shared hit=457
+ Planning Time: 3.250 ms
+ Execution Time: 7.691 ms
+(95 rows)
+

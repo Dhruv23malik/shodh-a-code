@@ -1,0 +1,64 @@
+{
+  "generatedAt": "2026-11-18T15:18:58.125Z",
+  "commit": "unknown (not a git repository)",
+  "config": {
+    "baseUrl": "http://localhost:3000",
+    "mode": "double",
+    "users": 10,
+    "submissions": 30,
+    "concurrency": 5,
+    "dataset": "seed default: Acme Weekly #1 / Add Two Numbers (seed/IDENTITIES.md)",
+    "contestId": "c0000000-0001-4000-8000-000000000001",
+    "problemId": "10000000-0001-4000-8000-000000000001",
+    "mix": "sample programs cycled correct/wrong/runtime_error + 1 leaderboard read per submission + status polling to terminal"
+  },
+  "dataVersion": {
+    "seed": "seed default: Acme Weekly #1 / Add Two Numbers (seed/IDENTITIES.md)",
+    "migration": "migrations/002_leaderboard_auth_attempts_idx.sql"
+  },
+  "executionMode": "double",
+  "durationSec": 5.99,
+  "throughputReqPerSec": 24.19,
+  "totalRequests": 145,
+  "errorsByCode": {},
+  "totalErrors": 0,
+  "submit": {
+    "count": 30,
+    "errors": 0,
+    "p50Ms": 13.876835,
+    "p95Ms": 142.144357,
+    "p99Ms": 143.081573,
+    "meanMs": 38.644694533333336,
+    "maxMs": 143.081573
+  },
+  "status": {
+    "count": 85,
+    "errors": 0,
+    "p50Ms": 5.74406,
+    "p95Ms": 18.46453,
+    "p99Ms": 33.985852,
+    "meanMs": 7.8136131529411745,
+    "maxMs": 33.985852
+  },
+  "leaderboard": {
+    "count": 30,
+    "errors": 0,
+    "p50Ms": 12.794962,
+    "p95Ms": 25.511886,
+    "p99Ms": 29.887282,
+    "meanMs": 15.429405766666665,
+    "maxMs": 29.887282
+  },
+  "queueDelayMs": {
+    "count": 30,
+    "p50Ms": 1030,
+    "p95Ms": 1175,
+    "maxMs": 1176
+  },
+  "judgeRuntimeMs": {
+    "count": 90,
+    "p50Ms": 5,
+    "p95Ms": 5,
+    "maxMs": 5
+  }
+}

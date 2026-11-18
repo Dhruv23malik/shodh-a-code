@@ -1,0 +1,14 @@
+# Runner image — the sandbox student code executes in.
+# Build context is the REPO ROOT (see docker-compose.yml `runner`
+# service): this file copies src/judge/runner.py from the repo.
+#   docker build -f judge/Dockerfile.runner .
+FROM python:3.12-slim
+# Non-root judge user, uid 10001. The container runs with
+# --network none, a read-only rootfs and a small /tmp tmpfs (see
+# judge/SECURITY.md); the user only needs to read /app and write the
+# verdict into the mounted /work directory.
+RUN useradd --uid 10001 --create-home --shell /usr/sbin/nologin runner
+WORKDIR /app
+COPY src/judge/runner.py /app/runner.py
+USER 10001
+CMD ["python3", "/app/runner.py"]

@@ -1,0 +1,14 @@
+FROM node:24-slim
+# The worker spawns runner containers, so it needs the Docker CLI.
+# (It talks to the host daemon through the mounted socket; it does not
+# run a daemon of its own. See judge/SECURITY.md.)
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends docker.io ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+ENV NODE_ENV=production
+CMD ["node", "dist/worker-main.js"]
